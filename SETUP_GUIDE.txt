@@ -1,0 +1,614 @@
+================================================================
+  J.A.R.V.I.S  --  COMPLETE SETUP GUIDE
+  Works on: Windows 10/11  |  Fedora Linux  |  Ubuntu Linux
+================================================================
+
+This guide walks you through everything from zero to a fully
+working JARVIS AI assistant on your computer.
+
+Total time: about 20-30 minutes
+Difficulty: beginner friendly
+
+
+
+================================================================
+  PART 1 -- WHAT YOU NEED TO DOWNLOAD FIRST
+================================================================
+
+Before touching JARVIS, install these 3 things on your computer.
+Links and instructions for both Windows and Linux below.
+
+
+------------------------------------------------------------
+1.1  PYTHON  (the language JARVIS is written in)
+------------------------------------------------------------
+
+Windows:
+  1. Go to  https://www.python.org/downloads/
+  2. Click the big yellow "Download Python 3.12.x" button
+  3. Run the installer
+  4. IMPORTANT: tick the box that says "Add Python to PATH"
+     before clicking Install
+  5. Click Install Now
+  6. When done, open Command Prompt and type:
+        python --version
+     You should see something like: Python 3.12.4
+
+Fedora Linux:
+  Open Terminal and run:
+        sudo dnf install python3 python3-pip -y
+  Then check:
+        python3 --version
+
+Ubuntu Linux:
+  Open Terminal and run:
+        sudo apt install python3 python3-pip -y
+
+
+------------------------------------------------------------
+1.2  NODE.JS  (needed only for the desktop UI window)
+------------------------------------------------------------
+
+Windows:
+  1. Go to  https://nodejs.org/en/download
+  2. Download the LTS version (the left button)
+  3. Run the installer, click Next through everything
+  4. When done, open Command Prompt and type:
+        node --version
+     You should see something like: v20.14.0
+
+Fedora Linux:
+        sudo dnf install nodejs -y
+
+Ubuntu Linux:
+        sudo apt install nodejs npm -y
+
+Check it works:
+        node --version
+
+
+------------------------------------------------------------
+1.3  GIT  (to download the JARVIS code)
+------------------------------------------------------------
+
+Windows:
+  1. Go to  https://git-scm.com/download/win
+  2. Download and run the installer
+  3. Click Next through all options (defaults are fine)
+
+Fedora Linux:
+        sudo dnf install git -y
+
+Ubuntu Linux:
+        sudo apt install git -y
+
+
+------------------------------------------------------------
+1.4  FFMPEG  (for audio/voice features)
+------------------------------------------------------------
+
+Windows:
+  Option A (easiest) -- using Chocolatey package manager:
+    1. Open PowerShell as Administrator
+    2. Run:  choco install ffmpeg -y
+    If you don't have Chocolatey, install it first from:
+    https://chocolatey.org/install
+
+  Option B -- manual install:
+    1. Go to  https://ffmpeg.org/download.html
+    2. Click Windows builds link
+    3. Download the zip file
+    4. Extract it to  C:\ffmpeg
+    5. Add  C:\ffmpeg\bin  to your Windows PATH:
+       Search "environment variables" in Start menu
+       Click Environment Variables
+       Under System Variables, find Path, click Edit
+       Click New, type  C:\ffmpeg\bin
+       Click OK everywhere
+
+Fedora Linux:
+        sudo dnf install ffmpeg -y
+
+Ubuntu Linux:
+        sudo apt install ffmpeg -y
+
+Check it works:
+        ffmpeg -version
+
+
+
+================================================================
+  PART 2 -- DOWNLOAD JARVIS
+================================================================
+
+Open a Terminal (Linux) or Command Prompt / PowerShell (Windows)
+and run these commands one by one:
+
+
+  cd Desktop
+
+  git clone https://github.com/your-username/jarvis.git
+
+  cd jarvis
+
+  NOTE: If you don't have the git link yet, you can also just
+  copy the jarvis folder directly to your Desktop from wherever
+  you saved it. Then cd into it:
+        cd Desktop\jarvis     (Windows)
+        cd ~/Desktop/jarvis   (Linux)
+
+
+
+================================================================
+  PART 3 -- INSTALL JARVIS DEPENDENCIES
+================================================================
+
+Still inside the jarvis folder in your terminal, run:
+
+
+------------------------------------------------------------
+3.1  Install Python packages
+------------------------------------------------------------
+
+Windows:
+        pip install -r requirements.txt
+
+Linux (Fedora/Ubuntu):
+        pip3 install -r requirements.txt --break-system-packages
+
+This downloads about 30-50 packages. Takes 3-10 minutes
+depending on your internet speed. Just let it run.
+
+If you see any RED errors about a specific package, that is
+usually fine -- JARVIS will just skip that optional feature.
+The important packages are at the top of requirements.txt.
+
+
+------------------------------------------------------------
+3.2  Install the UI packages (for the desktop window)
+------------------------------------------------------------
+
+        cd ui
+        npm install
+        cd ..
+
+This downloads the Electron desktop framework. Takes 2-5 minutes.
+
+
+------------------------------------------------------------
+3.3  Install audio system libraries (Linux only)
+------------------------------------------------------------
+
+Fedora:
+        sudo dnf install portaudio-devel python3-devel gcc -y
+
+Ubuntu:
+        sudo apt install portaudio19-dev python3-dev gcc -y
+
+Then reinstall the audio Python package:
+        pip3 install pyaudio --break-system-packages
+
+
+------------------------------------------------------------
+3.4  Install Playwright browser (for browser automation feature)
+------------------------------------------------------------
+
+        playwright install chromium
+
+If that gives an error, try:
+        python -m playwright install chromium    (Windows)
+        python3 -m playwright install chromium   (Linux)
+
+
+
+================================================================
+  PART 4 -- SET UP YOUR API KEYS
+================================================================
+
+JARVIS uses AI services to think and answer you. You need at
+least ONE of these to work. The first option (Ollama) is free
+and works offline -- no account needed. The rest need accounts.
+
+
+------------------------------------------------------------
+OPTION A (RECOMMENDED) -- Ollama  (FREE, works offline)
+------------------------------------------------------------
+
+This lets JARVIS run AI completely on your computer.
+No internet needed. No account. Totally private.
+
+Windows:
+  1. Go to  https://ollama.com/download/windows
+  2. Download and run the installer
+  3. After install, open Command Prompt and run:
+          ollama pull llama3.2
+     This downloads the AI model (about 2GB). Wait for it.
+  4. After download, run:
+          ollama serve
+     Leave this running in the background.
+
+Linux:
+  1. Run this one command in Terminal:
+          curl -fsSL https://ollama.com/install.sh | sh
+  2. Then download the AI model:
+          ollama pull llama3.2
+  3. Ollama starts automatically on Linux. If not, run:
+          ollama serve
+
+Test it works:
+  Open a new terminal and run:
+        ollama run llama3.2
+  Type "hello" and press Enter. You should get a response.
+  Type /bye to exit.
+
+That is all you need for JARVIS to work!
+
+
+------------------------------------------------------------
+OPTION B -- Cloud AI (better quality, needs internet)
+------------------------------------------------------------
+
+For best results, sign up for one or more of these services.
+They all have free tiers or free trials.
+
+  Anthropic Claude (best quality):
+    Go to: https://console.anthropic.com
+    Sign up, go to API Keys, create a key
+    Copy the key -- it starts with  sk-ant-
+
+  OpenAI GPT-4 (very good):
+    Go to: https://platform.openai.com
+    Sign up, go to API Keys, create a key
+    Copy the key -- it starts with  sk-
+
+  Groq (fastest, free tier):
+    Go to: https://console.groq.com
+    Sign up, go to API Keys, create a key
+    Copy the key
+
+
+------------------------------------------------------------
+4.1  Create your .env file
+------------------------------------------------------------
+
+Copy the template file:
+
+Windows (Command Prompt):
+        copy .env.example .env
+
+Linux:
+        cp .env.example .env
+
+Now open the .env file in any text editor (Notepad on Windows,
+gedit or nano on Linux) and paste your API keys:
+
+  ANTHROPIC_API_KEY=sk-ant-your-key-here
+  OPENAI_API_KEY=sk-your-key-here
+  GROQ_API_KEY=gsk_your-key-here
+
+Leave blank any keys you don't have. Save and close the file.
+
+You need at least one AI key OR Ollama running.
+
+
+------------------------------------------------------------
+4.2  Optional: Web search (makes JARVIS smarter for current info)
+------------------------------------------------------------
+
+For free web search, no key needed -- DuckDuckGo works automatically.
+
+For better results, get a free Tavily key:
+  Go to: https://tavily.com
+  Sign up, copy your API key
+  Add to .env:  TAVILY_API_KEY=tvly-your-key-here
+
+
+------------------------------------------------------------
+4.3  Optional: Voice features
+------------------------------------------------------------
+
+For best voice quality in English, Hindi, Malayalam, Tamil:
+
+  Google TTS voices (needs GOOGLE_API_KEY):
+    Go to: https://console.cloud.google.com
+    Enable "Cloud Text-to-Speech API"
+    Create credentials, copy API key
+
+  ElevenLabs (best natural sounding voice, free tier):
+    Go to: https://elevenlabs.io
+    Sign up, go to Profile, copy API key
+    Add: ELEVENLABS_API_KEY=your-key
+
+  For Indian language voices WITHOUT any API key:
+    gTTS works for free -- already installed
+    Just run JARVIS and it uses gTTS automatically
+
+
+
+================================================================
+  PART 5 -- RUN JARVIS
+================================================================
+
+Make sure you are inside the jarvis folder in your terminal.
+
+
+------------------------------------------------------------
+5.1  Quickest way -- Desktop UI (recommended)
+------------------------------------------------------------
+
+Windows -- just double click:
+        launch.bat
+
+Or from Command Prompt:
+        launch.bat ui
+
+Linux:
+        ./launch.sh
+
+Or:
+        ./launch.sh ui
+
+This opens the full JARVIS window with chat, system monitor,
+settings, and language switcher.
+
+
+------------------------------------------------------------
+5.2  Text chat in terminal (no UI, lightest option)
+------------------------------------------------------------
+
+Windows:
+        python main.py
+
+Linux:
+        python3 main.py
+
+Type your question and press Enter. Works in English, Malayalam,
+Hindi, or Tamil -- JARVIS detects the language automatically.
+
+
+------------------------------------------------------------
+5.3  Voice mode (say "Jarvis" to activate)
+------------------------------------------------------------
+
+Windows:
+        launch.bat voice
+
+Linux:
+        ./launch.sh voice
+
+Or:
+        python3 main.py --voice
+
+Say "Jarvis" clearly and wait for the beep, then ask anything.
+
+
+------------------------------------------------------------
+5.4  Push-to-talk (hold SPACE to speak, release to send)
+------------------------------------------------------------
+
+Windows:
+        launch.bat ptt
+
+Linux:
+        ./launch.sh ptt
+
+Or:
+        python3 main.py --ptt
+
+
+------------------------------------------------------------
+5.5  Start in a specific language
+------------------------------------------------------------
+
+Malayalam:
+        ./launch.sh ml           (Linux text mode)
+        ./launch.sh voice-ml     (Linux voice mode)
+        python main.py --lang ml (Windows/Linux)
+
+Hindi:
+        ./launch.sh hi
+        python main.py --lang hi
+
+Tamil:
+        ./launch.sh ta
+        python main.py --lang ta
+
+You can also switch language mid-conversation by just typing
+or speaking in that language. JARVIS detects it automatically.
+
+
+
+================================================================
+  PART 6 -- TROUBLESHOOTING
+================================================================
+
+
+Problem: "python is not recognized" (Windows)
+  Solution: Reinstall Python and tick "Add Python to PATH"
+  Or run:  py main.py  instead of  python main.py
+
+
+Problem: "No module named aiohttp" or similar import error
+  Solution: Run the install command again:
+    Windows:  pip install -r requirements.txt
+    Linux:    pip3 install -r requirements.txt --break-system-packages
+
+
+Problem: JARVIS says "all AI providers unavailable"
+  Solutions:
+  1. Make sure Ollama is running:  ollama serve
+  2. Check your .env file has at least one API key
+  3. Check your internet connection
+  4. Run:  ollama pull llama3.2  to re-download the model
+
+
+Problem: Voice / microphone not working
+  Solutions:
+  1. Make sure your microphone is connected and working
+  2. Check microphone permissions in system settings
+  3. Install portaudio:
+     Fedora:  sudo dnf install portaudio-devel -y
+     Ubuntu:  sudo apt install portaudio19-dev -y
+     Windows: pip install pyaudio
+  4. Run:  pip install sounddevice  (all platforms)
+
+
+Problem: "Port 7771 already in use"
+  Solution: Another JARVIS is already running. Close it first.
+  Linux:   pkill -f server.py
+  Windows: Open Task Manager, find Python, End Task
+
+
+Problem: UI window does not open
+  Solution:
+  1. Make sure Node.js is installed:  node --version
+  2. Run:  cd ui && npm install && cd ..
+  3. Try text mode instead:  python main.py
+
+
+Problem: Translation not working (responses stay in English)
+  Solution: Install free translator:
+    pip install deep-translator langdetect
+  Or use Google Translate API (paid, best quality)
+
+
+Problem: Indian language TTS sounds robotic or uses English voice
+  Solution: Install gTTS and make sure internet is available:
+    pip install gTTS
+  For offline Indian language TTS install espeak-ng:
+    Fedora:  sudo dnf install espeak-ng -y
+    Ubuntu:  sudo apt install espeak-ng -y
+    Windows: Download from https://espeak-ng.github.io/espeak-ng/
+
+
+Problem: "permission denied" running launch.sh (Linux)
+  Solution:  chmod +x launch.sh  then  ./launch.sh
+
+
+
+================================================================
+  PART 7 -- QUICK REFERENCE
+================================================================
+
+
+All launch commands at a glance:
+
+  WINDOWS                          LINUX
+  ---------                        -----
+  launch.bat                       ./launch.sh
+  launch.bat ui                    ./launch.sh ui
+  launch.bat voice                 ./launch.sh voice
+  launch.bat ptt                   ./launch.sh ptt
+  launch.bat text                  ./launch.sh text
+  python main.py --lang ml         ./launch.sh ml
+  python main.py --lang hi         ./launch.sh hi
+  python main.py --lang ta         ./launch.sh ta
+  python main.py --voice --lang ml ./launch.sh voice-ml
+  python main.py --voice --lang hi ./launch.sh voice-hi
+  python main.py --voice --lang ta ./launch.sh voice-ta
+
+
+Keyboard shortcuts inside the UI:
+
+  Ctrl+Shift+J    Show or hide JARVIS window
+  Ctrl+Shift+V    Toggle voice mode
+  Ctrl+Shift+Space  Push to talk
+  Enter           Send message
+  Shift+Enter     New line in message
+
+
+Files you might want to edit:
+
+  .env                  Your API keys
+  config/settings.yaml  All JARVIS settings
+  ~/.jarvis/plugins/    Drop Python files here to add new skills
+
+
+Where JARVIS stores data:
+
+  ~/.jarvis/memory/     Conversation memory (ChromaDB)
+  ~/.jarvis/plugins/    Your custom plugins
+  ~/.jarvis/jarvis.log  Log file for debugging
+
+
+How to update JARVIS later:
+
+  git pull
+  pip install -r requirements.txt
+  cd ui && npm install && cd ..
+
+
+
+================================================================
+  PART 8 -- MINIMUM SETUP (works with zero API keys)
+================================================================
+
+If you just want to try JARVIS right now with no accounts:
+
+  Step 1: Install Python, Node.js, Git, FFmpeg (Part 1)
+
+  Step 2: Download JARVIS (Part 2)
+
+  Step 3: Install dependencies:
+            pip install aiohttp pyyaml python-dotenv pyttsx3 gTTS
+            pip install psutil pyautogui duckduckgo-search
+            pip install deep-translator langdetect
+            cd ui && npm install && cd ..
+
+  Step 4: Install Ollama from https://ollama.com
+            ollama pull llama3.2
+
+  Step 5: Run:
+            Windows: launch.bat
+            Linux:   ./launch.sh
+
+That is it. JARVIS will work completely offline with Ollama
+as the AI brain, gTTS for voice, and DuckDuckGo for web search.
+
+
+
+================================================================
+  PART 9 -- WHAT EACH MODULE DOES
+================================================================
+
+Module 1 -- AI Brain
+  The intelligence. Routes your questions through 9 AI providers.
+  Tries Ollama first (offline), then cloud providers as backup.
+  Has memory so it remembers past conversations.
+
+Module 2 -- Voice
+  Lets you talk to JARVIS hands-free.
+  Say "Jarvis" to wake it up, then ask anything.
+  Supports Malayalam, Hindi, Tamil, and English speech.
+
+Module 3 -- PC Control
+  JARVIS can control your computer.
+  "Open Spotify", "take a screenshot", "organize my downloads",
+  "set volume to 60", "what is my CPU usage", etc.
+
+Module 4 -- Desktop UI
+  The Electron window with chat, system monitor, settings.
+  Dark arc reactor theme. Lives in system tray when closed.
+
+Module 5 -- Advanced Skills
+  Browser: JARVIS can open websites and click things
+  Vision:  JARVIS can see your screen and describe it
+  Productivity: reminders, notes, todos, calendar, timers
+  Plugins: drop Python files in ~/.jarvis/plugins to add skills
+
+Multilingual
+  JARVIS auto-detects whether you type or speak in English,
+  Malayalam, Hindi, or Tamil and responds in the same language.
+
+
+
+================================================================
+  END OF GUIDE
+================================================================
+
+If something is not working, check Part 6 Troubleshooting.
+
+For issues not covered here, check the README.md file or
+open an issue on the GitHub page.
+
+Good luck! -- JARVIS is ready to assist you.

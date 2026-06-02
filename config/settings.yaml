@@ -1,0 +1,183 @@
+# ============================================================
+# JARVIS CONFIGURATION FILE
+# ============================================================
+
+# --- AI Providers ---
+ai:
+  # Priority order: jarvis tries each until one succeeds
+  provider_priority:
+    - ollama        # Local first (fastest, private, free)
+    - anthropic     # Claude (best quality)
+    - openai        # GPT-4o fallback
+    - groq          # Ultra-fast inference
+    - google        # Gemini fallback
+    - mistral       # Mistral fallback
+    - cohere        # Cohere fallback
+    - together      # Together AI (many open models)
+    - huggingface   # HuggingFace Inference API
+
+  # Local model (Ollama)
+  ollama:
+    enabled: true
+    base_url: "http://localhost:11434"
+    model: "llama3.2"           # Change to your installed model
+    fallback_model: "mistral"
+    timeout: 30
+
+  # Anthropic Claude
+  anthropic:
+    enabled: true
+    api_key: ""                 # Set ANTHROPIC_API_KEY env var
+    model: "claude-opus-4-5"
+    max_tokens: 4096
+
+  # OpenAI
+  openai:
+    enabled: true
+    api_key: ""                 # Set OPENAI_API_KEY env var
+    model: "gpt-4o"
+    base_url: "https://api.openai.com/v1"
+
+  # Groq (fast inference)
+  groq:
+    enabled: true
+    api_key: ""                 # Set GROQ_API_KEY env var
+    model: "llama-3.3-70b-versatile"
+    base_url: "https://api.groq.com/openai/v1"
+
+  # Google Gemini
+  google:
+    enabled: true
+    api_key: ""                 # Set GOOGLE_API_KEY env var
+    model: "gemini-2.0-flash"
+
+  # Mistral
+  mistral:
+    enabled: true
+    api_key: ""                 # Set MISTRAL_API_KEY env var
+    model: "mistral-large-latest"
+
+  # Cohere
+  cohere:
+    enabled: true
+    api_key: ""                 # Set COHERE_API_KEY env var
+    model: "command-r-plus"
+
+  # Together AI
+  together:
+    enabled: true
+    api_key: ""                 # Set TOGETHER_API_KEY env var
+    model: "meta-llama/Llama-3.3-70B-Instruct-Turbo"
+    base_url: "https://api.together.xyz/v1"
+
+  # HuggingFace
+  huggingface:
+    enabled: true
+    api_key: ""                 # Set HUGGINGFACE_API_KEY env var
+    model: "meta-llama/Meta-Llama-3.1-70B-Instruct"
+
+# --- Web Search Providers ---
+search:
+  provider_priority:
+    - tavily       # Best for AI agents
+    - brave        # Privacy-first
+    - serper       # Google results
+    - duckduckgo   # Free, no API key
+
+  tavily:
+    enabled: true
+    api_key: ""    # Set TAVILY_API_KEY env var
+
+  brave:
+    enabled: true
+    api_key: ""    # Set BRAVE_API_KEY env var
+
+  serper:
+    enabled: true
+    api_key: ""    # Set SERPER_API_KEY env var
+
+  duckduckgo:
+    enabled: true  # Free, always on
+
+# --- Voice ---
+voice:
+  wake_word: "jarvis"
+  language: "en"               # Whisper language hint
+  force_language: null         # Force a language: "ml" | "hi" | "ta" | null
+
+  stt_provider: "whisper"      # whisper | deepgram | assemblyai | google_free
+  whisper:
+    model_size: "small"        # Use "medium" for better Indic accuracy
+    device: "auto"
+    compute_type: "int8"
+
+  deepgram:
+    api_key: ""                # Set DEEPGRAM_API_KEY env var
+
+  assemblyai:
+    api_key: ""                # Set ASSEMBLYAI_API_KEY env var
+
+  tts_provider: "gtts"         # gtts works for EN / ML / HI / TA
+  coqui:
+    model: "tts_models/en/ljspeech/tacotron2-DDC"
+    speed: 1.1
+  gtts: {}
+
+  elevenlabs:
+    api_key: ""    # Set ELEVENLABS_API_KEY env var
+    voice_id: "21m00Tcm4TlvDq8ikWAM"  # Rachel (default)
+
+  google_tts:
+    api_key: ""                # Set GOOGLE_API_KEY env var
+    language: "en-US"
+    voice_name: "en-US-Neural2-D"
+
+  pyttsx3:
+    rate: 175
+    volume: 0.9
+    voice_index: 0
+
+# --- Memory ---
+memory:
+  backend: "chroma"    # chroma | redis | sqlite
+  persist_path: "~/.jarvis/memory"
+  max_context_messages: 20
+  embedding_model: "all-MiniLM-L6-v2"
+
+# --- System ---
+system:
+  log_level: "INFO"
+  log_file: "~/.jarvis/jarvis.log"
+  personality: |
+    You are JARVIS, an advanced AI assistant. You are helpful, precise,
+    witty, and slightly formal — like a brilliant butler. You have access
+    to the user's computer, the web, and various tools. Always be concise
+    unless depth is requested. Address the user as "sir" or "ma'am" unless
+    they specify otherwise.
+
+# --- System Access ---
+system_access:
+  enabled: true
+  files: true              # Read/write/copy/move/delete files and folders
+  commands: true           # Run explicit shell commands, e.g. "run command: ls"
+  mouse_keyboard: true     # Move/click mouse, type text, press hotkeys
+  screen: true             # Screenshots and screen reading
+  microphone: true         # Voice input modes
+  webcam: true             # Camera capture through vision skill
+  agent_control: true      # Allow skill router to act before AI chat fallback
+
+# --- Language / Multilingual ---
+language:
+  language: "en"               # Default: en | ml | hi | ta
+  auto_detect: true            # Auto-detect language from input
+  translate_responses: true    # Translate AI responses to user's language
+
+  # Translation providers (tried in order)
+  # Primary: Google Cloud Translate (best quality, paid)
+  # GOOGLE_TRANSLATE_API_KEY env var (separate from Google AI key)
+
+  # Free fallback: deep-translator (googletrans, no key needed)
+  # Offline fallback: Argos Translate (downloads models on demand)
+
+  # LibreTranslate (self-hosted option)
+  # libretranslate_url: "http://localhost:5000"
