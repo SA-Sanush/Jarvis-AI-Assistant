@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net; script-src 'self'; img-src 'self' data:;" />
+  <title>JARVIS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.14.0/tabler-icons.min.css" />
+  <link rel="stylesheet" href="../styles/jarvis.css" />
+</head>
+<body>
+<div id="app">
+
+  <!-- ── Title bar ─────────────────────────────── -->
+  <div id="titlebar">
+    <div id="titlebar-logo">
+      <div class="logo-arc"></div>
+      <span id="titlebar-title">J.A.R.V.I.S</span>
+      <span id="titlebar-status">
+        <span class="status-dot" id="status-dot"></span>
+        <span id="status-text">Connecting...</span>
+      </span>
+    </div>
+    <div id="titlebar-spacer"></div>
+    <div id="titlebar-controls">
+      <button class="win-btn" onclick="jarvis.minimize()" title="Minimize"><i class="ti ti-minus"></i></button>
+      <button class="win-btn" onclick="jarvis.maximize()" title="Maximize"><i class="ti ti-square"></i></button>
+      <button class="win-btn close" onclick="jarvis.close()" title="Close to tray"><i class="ti ti-x"></i></button>
+    </div>
+  </div>
+
+  <!-- ── Sidebar ────────────────────────────────── -->
+  <nav id="sidebar">
+    <div class="nav-section">Navigation</div>
+    <div class="nav-item active" data-view="chat" onclick="switchView('chat')">
+      <i class="ti ti-message-2"></i> Chat
+    </div>
+    <div class="nav-item" data-view="system" onclick="switchView('system')">
+      <i class="ti ti-cpu"></i> System
+    </div>
+    <div class="nav-item" data-view="settings" onclick="switchView('settings')">
+      <i class="ti ti-settings"></i> Settings
+    </div>
+
+    <div class="nav-section" style="margin-top:auto">AI Providers</div>
+    <div id="provider-list">
+      <div class="provider-badge"><div class="dot" style="background:var(--text-dim)"></div> Loading...</div>
+    </div>
+
+    <!-- Language switcher -->
+    <div class="nav-section">Language</div>
+    <div id="lang-bar" style="padding:0 8px;display:flex;flex-direction:column;gap:2px;"></div>
+    <div style="padding:4px 16px 6px;font-size:10px;color:var(--color-text-tertiary)" id="current-lang-label">🇬🇧 English</div>
+
+    <div id="sidebar-footer">
+      <div class="provider-badge" id="memory-stat">
+        <i class="ti ti-database" style="font-size:12px"></i>
+        <span>Memory: —</span>
+      </div>
+      <div class="provider-badge" style="margin-top:4px">
+        <i class="ti ti-brand-github" style="font-size:12px"></i>
+        <span style="cursor:pointer" onclick="jarvis.openExternal('https://github.com/jarvis-ai')">View on GitHub</span>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ── Main content area ─────────────────────── -->
+  <main id="content">
+
+    <!-- Chat view -->
+    <div id="chat-view">
+      <div id="messages">
+        <div class="message assistant">
+          <div class="msg-avatar"><i class="ti ti-robot"></i></div>
+          <div>
+            <div class="msg-bubble">
+              Good day. I am <strong>JARVIS</strong> — your AI assistant. All systems operational. How may I assist you?
+            </div>
+            <div class="msg-meta">Just now · Ready</div>
+          </div>
+        </div>
+      </div>
+
+      <div id="input-bar">
+        <div id="input-wrapper">
+          <textarea
+            id="user-input"
+            placeholder="Ask JARVIS anything... / ചോദിക്കൂ... / पूछें... / கேளுங்கள்..."
+            rows="1"
+            autofocus
+          ></textarea>
+          <span id="input-lang-indicator" style="font-size:14px;opacity:0.6;flex-shrink:0"></span>
+          <button class="icon-btn" id="attach-btn" title="Attach file" onclick="attachFile()">
+            <i class="ti ti-paperclip"></i>
+          </button>
+        </div>
+        <button class="icon-btn" id="voice-btn" title="Voice input (Ctrl+Shift+V)" onclick="toggleVoice()">
+          <i class="ti ti-microphone"></i>
+        </button>
+        <button class="icon-btn accent" id="send-btn" title="Send (Enter)" onclick="sendMessage()">
+          <i class="ti ti-send"></i>
+        </button>
+      </div>
+
+      <div id="status-bar">
+        <span><i class="ti ti-bolt" style="font-size:11px"></i> <span id="active-provider">—</span></span>
+        <span>·</span>
+        <span id="last-latency">—</span>
+        <span style="margin-left:auto" id="token-count"></span>
+      </div>
+    </div>
+
+    <!-- System monitor view -->
+    <div id="system-view" class="hidden">
+      <h2 style="font-size:16px;font-weight:600;margin-bottom:16px;color:var(--text-primary)">
+        <i class="ti ti-device-desktop" style="color:var(--accent)"></i> System Monitor
+      </h2>
+      <div class="sys-grid" id="sys-grid">
+        <div class="sys-card">
+          <div class="sys-card-label">CPU Usage</div>
+          <div class="sys-card-value" id="cpu-val">—</div>
+          <div class="sys-card-unit">percent</div>
+          <div class="progress-bar"><div class="progress-fill" id="cpu-bar" style="width:0%"></div></div>
+        </div>
+        <div class="sys-card">
+          <div class="sys-card-label">Memory</div>
+          <div class="sys-card-value" id="ram-val">—</div>
+          <div class="sys-card-unit" id="ram-unit">GB used</div>
+          <div class="progress-bar"><div class="progress-fill" id="ram-bar" style="width:0%"></div></div>
+        </div>
+        <div class="sys-card">
+          <div class="sys-card-label">Disk</div>
+          <div class="sys-card-value" id="disk-val">—</div>
+          <div class="sys-card-unit" id="disk-unit">GB used</div>
+          <div class="progress-bar"><div class="progress-fill" id="disk-bar" style="width:0%"></div></div>
+        </div>
+        <div class="sys-card" id="battery-card">
+          <div class="sys-card-label">Battery</div>
+          <div class="sys-card-value" id="battery-val">—</div>
+          <div class="sys-card-unit" id="battery-unit">%</div>
+          <div class="progress-bar"><div class="progress-fill" id="battery-bar" style="width:0%"></div></div>
+        </div>
+      </div>
+      <div style="text-align:right;margin-top:8px">
+        <span style="font-size:11px;color:var(--text-dim)" id="sys-updated">Updated: —</span>
+      </div>
+    </div>
+
+    <!-- Settings view -->
+    <div id="settings-view" class="hidden">
+      <h2 style="font-size:16px;font-weight:600;margin-bottom:20px;color:var(--text-primary)">
+        <i class="ti ti-settings" style="color:var(--accent)"></i> Settings
+      </h2>
+
+      <div class="settings-section">
+        <div class="settings-title">Appearance</div>
+        <div class="setting-row">
+          <div><div class="setting-label">Dark Mode</div><div class="setting-sub">Arc reactor aesthetic</div></div>
+          <div class="toggle on" id="theme-toggle" onclick="toggleTheme(this)"></div>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <div class="settings-title">Voice</div>
+        <div class="setting-row">
+          <div><div class="setting-label">Wake Word</div><div class="setting-sub">Say "Jarvis" to activate</div></div>
+          <div class="toggle on" id="wake-toggle" onclick="toggleSetting(this, 'wake_word_enabled')"></div>
+        </div>
+        <div class="setting-row">
+          <div><div class="setting-label">Streaming TTS</div><div class="setting-sub">Speak while generating</div></div>
+          <div class="toggle on" id="stream-tts-toggle" onclick="toggleSetting(this, 'streaming_tts')"></div>
+        </div>
+        <div class="setting-row">
+          <div><div class="setting-label">TTS Provider</div></div>
+          <select class="setting-select" id="tts-select" onchange="saveSetting('tts_provider', this.value)">
+            <option value="pyttsx3">pyttsx3 (offline)</option>
+            <option value="gtts">gTTS (free)</option>
+            <option value="coqui">Coqui (local)</option>
+            <option value="elevenlabs">ElevenLabs (cloud)</option>
+          </select>
+        </div>
+        <div class="setting-row">
+          <div><div class="setting-label">STT Model</div></div>
+          <select class="setting-select" id="stt-select" onchange="saveSetting('whisper_model', this.value)">
+            <option value="tiny">Whisper Tiny (fastest)</option>
+            <option value="small" selected>Whisper Small (balanced)</option>
+            <option value="medium">Whisper Medium (accurate)</option>
+            <option value="large">Whisper Large (best)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <div class="settings-title">AI Brain</div>
+        <div class="setting-row">
+          <div><div class="setting-label">Preferred Provider</div></div>
+          <select class="setting-select" id="ai-select" onchange="saveSetting('ai_provider', this.value)">
+            <option value="ollama">Ollama (local)</option>
+            <option value="anthropic">Claude (Anthropic)</option>
+            <option value="openai">GPT-4o (OpenAI)</option>
+            <option value="groq">Groq (fast)</option>
+            <option value="google">Gemini (Google)</option>
+          </select>
+        </div>
+        <div class="setting-row">
+          <div><div class="setting-label">Web Search</div><div class="setting-sub">Auto-search for current info</div></div>
+          <div class="toggle on" id="search-toggle" onclick="toggleSetting(this, 'web_search_enabled')"></div>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <div class="settings-title">Memory</div>
+        <div class="setting-row">
+          <div><div class="setting-label">Persistent Memory</div><div class="setting-sub">Remember past conversations</div></div>
+          <div class="toggle on" id="mem-toggle" onclick="toggleSetting(this, 'memory_enabled')"></div>
+        </div>
+        <div class="setting-row">
+          <div><div class="setting-label">Clear All Memory</div><div class="setting-sub">Wipe conversation history</div></div>
+          <button onclick="clearMemory()" style="background:var(--danger);color:#fff;border:none;padding:5px 12px;border-radius:var(--radius-sm);cursor:pointer;font-size:12px">Clear</button>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <div class="settings-title">Language</div>
+        <div class="setting-row">
+          <div><div class="setting-label">Auto-detect language</div><div class="setting-sub">Detect from speech &amp; text</div></div>
+          <div class="toggle on" id="autodetect-toggle" onclick="toggleSetting(this,'auto_detect')"></div>
+        </div>
+        <div class="setting-row">
+          <div><div class="setting-label">Default language</div></div>
+          <select class="setting-select" id="lang-select" onchange="switchLanguage(this.value)">
+            <option value="en">🇬🇧 English</option>
+            <option value="ml">🇮🇳 മലയാളം</option>
+            <option value="hi">🇮🇳 हिंदी</option>
+            <option value="ta">🇮🇳 தமிழ்</option>
+          </select>
+        </div>
+      </div>
+
+      <div style="font-size:11px;color:var(--text-dim);margin-top:8px">
+        JARVIS v1.0.0 · Windows &amp; Fedora Linux · EN / ML / HI / TA
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Voice overlay -->
+<div id="voice-overlay">
+  <div class="voice-ring"><i class="ti ti-microphone"></i></div>
+  <div class="voice-label" id="voice-label">Listening...</div>
+  <button class="voice-cancel" onclick="cancelVoice()">Cancel</button>
+</div>
+
+<script src="renderer.js"></script>
+</body>
+</html>

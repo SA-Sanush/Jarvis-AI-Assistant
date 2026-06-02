@@ -1,0 +1,82 @@
+# ============================================================
+# JARVIS — Full Requirements (Modules 1, 2, 3)
+# ============================================================
+
+# ── Core ──────────────────────────────────────────────────
+aiohttp>=3.9.0
+pyyaml>=6.0
+python-dotenv>=1.0.0
+
+# ── AI Providers (Module 1) ───────────────────────────────
+anthropic>=0.40.0
+openai>=1.50.0
+google-generativeai>=0.8.0
+cohere>=5.0.0
+huggingface_hub>=0.24.0
+
+# ── Memory (Module 1) ─────────────────────────────────────
+chromadb>=0.5.0
+# Optional: semantic Chroma embeddings. This can install PyTorch/CUDA packages.
+# sentence-transformers>=3.0.0
+
+# ── Web Search (Module 1) ─────────────────────────────────
+tavily-python>=0.5.0
+duckduckgo-search>=6.0.0
+
+# ── Wake Word (Module 2) ──────────────────────────────────
+# pvporcupine>=3.0.0          # Best accuracy — get free key at console.picovoice.ai
+vosk>=0.3.45                  # Open source offline fallback
+SpeechRecognition>=3.10.0     # Simple fallback
+
+# ── STT — Speech to Text (Module 2) ──────────────────────
+faster-whisper>=1.0.0
+sounddevice>=0.4.6
+soundfile>=0.12.0
+numpy>=1.24.0
+
+# ── TTS — Text to Speech (Module 2) ──────────────────────
+pyttsx3>=2.90
+gTTS>=2.5.0
+# TTS>=0.22.0                 # Coqui (large install, best local quality)
+# elevenlabs>=1.0.0           # Best cloud TTS
+
+# ── Audio ─────────────────────────────────────────────────
+# Optional SpeechRecognition microphone backend. Active voice paths use sounddevice.
+# pyaudio>=0.2.13
+
+# ── PC Control (Module 3) ────────────────────────────────
+psutil>=5.9.0
+pyautogui>=0.9.54
+pyperclip>=1.8.2
+pynput>=1.7.6
+watchdog>=4.0.0
+send2trash>=1.8.3
+distro>=1.9.0
+
+# ── Dev & Testing ─────────────────────────────────────────
+pytest>=8.0.0
+pytest-asyncio>=0.23.0
+
+# ── Module 5: Browser Automation ──────────────────────────
+playwright>=1.44.0            # pip install playwright && playwright install chromium
+
+# ── Module 5: Vision ──────────────────────────────────────
+opencv-python>=4.9.0          # Camera + image processing
+pillow>=10.0.0                # Image handling (PIL)
+# pytesseract>=0.3.10         # OCR (also needs tesseract binary)
+# easyocr>=1.7.0              # Better OCR, 80+ languages
+# ultralytics>=8.0.0          # YOLOv8 object detection
+
+# ── Module 5: Productivity ────────────────────────────────
+# (uses stdlib: sqlite3, datetime, threading)
+# google-api-python-client>=2.100.0   # Optional: Google Calendar sync
+# O365>=2.0.30                        # Optional: Outlook/Microsoft 365 sync
+
+# ── Module 5: Plugins ─────────────────────────────────────
+# (no extra deps — plugins install their own as needed)
+
+# ── Multilingual / Translation ────────────────────────────
+deep-translator>=1.11.0       # Free Google Translate wrapper (no API key)
+langdetect>=1.0.9             # Language detection library
+# argostranslate>=1.9.0       # Fully offline translation (large optional install)
+# google-cloud-translate>=3.12.0  # Best quality — needs GOOGLE_TRANSLATE_API_KEY
