@@ -52,7 +52,7 @@ class MultilingualPipeline:
         self.stt: Optional[MultilingualSTT] = None
         self.tts: Optional[MultilingualTTS] = None
         self.wake = WakeWordDetector(
-            config={**cfg.get("voice", {}), "wake_word": "jarvis"},
+            config={**cfg.get("voice", {}), "wake_word": self.lm.get_wake_words()},
             on_detected=self._on_wake
         )
 
@@ -70,6 +70,7 @@ class MultilingualPipeline:
         self._running = True
         self._loop = asyncio.get_event_loop()
         self._ensure_tts()
+        self._ensure_stt()
 
         # Greet in current language
         greeting = self.lm.get_greeting()

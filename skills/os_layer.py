@@ -97,6 +97,22 @@ def get_documents() -> Path:
     return Path.home() / "Documents"
 
 
+def get_pictures() -> Path:
+    return Path.home() / "Pictures"
+
+
+def get_videos() -> Path:
+    return Path.home() / "Videos"
+
+
+def get_music() -> Path:
+    return Path.home() / "Music"
+
+
+def get_templates() -> Path:
+    return Path.home() / "Templates"
+
+
 # ─────────────────────────────────────────────
 # Application launcher
 # ─────────────────────────────────────────────
@@ -136,20 +152,43 @@ APP_MAP_LINUX = {
     "settings": "gnome-control-center",
     "chrome": "google-chrome",
     "chromium": "chromium-browser",
+    "brave": "brave-browser",
+    "edge": "microsoft-edge",
     "firefox": "firefox",
     "spotify": "spotify",
     "discord": "discord",
+    "slack": "slack",
+    "telegram": "telegram-desktop",
+    "signal": "signal-desktop",
+    "teams": "teams",
+    "zoom": "zoom",
     "vscode": "code",
     "vs code": "code",
+    "code": "code",
     "terminal": "gnome-terminal",
     "konsole": "konsole",
+    "tilix": "tilix",
+    "termite": "termite",
     "steam": "steam",
     "vlc": "vlc",
     "obs": "obs",
+    "kdenlive": "kdenlive",
     "gimp": "gimp",
+    "inkscape": "inkscape",
     "libreoffice": "libreoffice",
     "writer": "libreoffice --writer",
     "calc": "libreoffice --calc",
+    "impress": "libreoffice --impress",
+    "draw": "libreoffice --draw",
+}
+
+APP_DESKTOP_LINUX = {
+    "discord": "/usr/share/applications/discord.desktop",
+    "slack": "/usr/share/applications/slack.desktop",
+    "telegram": "/usr/share/applications/telegramdesktop.desktop",
+    "signal": "/usr/share/applications/signaldesktop.desktop",
+    "zoom": "/usr/share/applications/zoom.desktop",
+    "teams": "/usr/share/applications/teams.desktop",
 }
 
 
@@ -169,13 +208,26 @@ async def open_application(app_name: str) -> dict:
         # Launch detached so JARVIS doesn't wait
         result = await run_command(f"nohup {cmd} &>/dev/null &")
         if not result["success"]:
-            # Try xdg-open or which
-            which = shutil.which(cmd.split()[0])
-            if which:
-                result = await run_command(f"nohup {which} &>/dev/null &")
+            which_cmd = shutil.which(cmd.split()[0])
+            if which_cmd:
+                result = await run_command(f"nohup {which_cmd} &>/dev/null &")
+
+        if not result["success"] and name in APP_DESKTOP_LINUX:
+            desktop_path = APP_DESKTOP_LINUX[name]
+            if Path(desktop_path).exists():
+                result = await run_command(f"xdg-open \"{desktop_path}\" &>/dev/null &")
+
+        if not result["success"] and name in APP_DESKTOP_LINUX:
+            gtk_launch = shutil.which("gtk-launch")
+            if gtk_launch:
+                desktop_name = Path(APP_DESKTOP_LINUX[name]).stem
+                result = await run_command(f"{gtk_launch} {desktop_name} &>/dev/null &")
 
     else:
         result = {"success": False, "stderr": f"Unsupported OS: {OS}"}
+
+    if not result["success"]:
+        logger.debug("open_application failed for %s: %s", app_name, result)
 
     return result
 

@@ -1,4 +1,14 @@
-/**
+import React from 'react';
+  
+  const Renderer = () =>  {
+	return (
+	  <div>
+	  </div>
+	);
+  }
+  
+  export default Renderer;
+  /**
  * JARVIS Renderer — ui/src/renderer.js
  * All UI logic: chat, voice control, system monitor, settings.
  * Runs in the browser context, communicates via window.jarvis (preload bridge).

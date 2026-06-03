@@ -111,8 +111,6 @@ class MultilingualTTS:
         """gTTS — best free option for Indian languages."""
         try:
             from gtts import gTTS
-            import soundfile as sf
-            import sounddevice as sd
 
             tts = gTTS(text=text, lang=lang_code, slow=False)
             with tempfile.NamedTemporaryFile(suffix=".mp3", delete=False) as f:

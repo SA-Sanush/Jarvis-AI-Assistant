@@ -111,6 +111,17 @@ class WhisperSTT:
                 )
                 text = " ".join(s.text.strip() for s in segments).strip()
 
+                if not text:
+                    logger.debug("Whisper STT returned empty transcript after VAD filtering, retrying without VAD")
+                    segments, info = await asyncio.to_thread(
+                        self._model.transcribe,
+                        audio_float,
+                        language=self.language,
+                        beam_size=5,
+                        vad_filter=False,
+                    )
+                    text = " ".join(s.text.strip() for s in segments).strip()
+
             return STTResult(
                 text=text,
                 language=info.language,

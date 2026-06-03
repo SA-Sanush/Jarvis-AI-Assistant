@@ -20,7 +20,9 @@ from .os_layer import (
     get_mouse_position, move_mouse, click_mouse, drag_mouse, scroll_mouse,
     get_active_window, get_clipboard, set_clipboard,
     shutdown, restart, sleep_system, lock_screen,
-    run_command, OS
+    run_command, OS,
+    get_home, get_desktop, get_downloads, get_documents,
+    get_pictures, get_videos, get_music, get_templates,
 )
 from .file_manager import FileManager
 
@@ -57,6 +59,29 @@ class PCControl:
         Returns a human-readable response string.
         """
         cmd = command.lower().strip()
+
+        # ── Access grants ──
+        if _any(cmd, [
+            "give all pc control to jarvis",
+            "grant full pc control",
+            "grant full access",
+            "give jarvis full access",
+            "allow jarvis to control my pc",
+            "enable full pc access",
+            "allow full system access",
+        ]):
+            self.access = {key: True for key in self.access}
+            return "Full PC control granted to Jarvis. All system access is now enabled."
+
+        if _any(cmd, [
+            "revoke full pc control",
+            "revoke full access",
+            "disable full pc access",
+            "disable system access",
+            "remove jarvis pc control",
+        ]):
+            self.access = {key: False for key in self.access}
+            return "PC control revoked. Jarvis no longer has system access."
 
         # ── Access status ──
         if _any(cmd, ["system access status", "permission status", "permissions status", "full access status"]):
@@ -107,6 +132,30 @@ class PCControl:
 
         if m := _match(cmd, r"(?:find|search for|locate)\s+(?:file\s+)?(?:called\s+)?(.+)"):
             return await self._find_file(m.group(1).strip())
+
+        if m := _match(cmd, r"(?i)^(?:open|show|launch|start|run)\s+(?:my\s+)?(files|downloads|desktop|documents|pictures|videos|music|templates|home|root|temp|tmp)(?:\s+folder|\s+directory)?$"):
+            target = m.group(1).lower()
+            if target == "files":
+                return await self._open_app("files")
+            from pathlib import Path
+            folder_paths = {
+                "home": get_home(),
+                "desktop": get_desktop(),
+                "downloads": get_downloads(),
+                "documents": get_documents(),
+                "pictures": get_pictures(),
+                "videos": get_videos(),
+                "music": get_music(),
+                "templates": get_templates(),
+                "root": Path("/"),
+                "temp": Path("/tmp") if OS == "Linux" else Path("/tmp"),
+                "tmp": Path("/tmp") if OS == "Linux" else Path("/tmp"),
+            }
+            path = folder_paths.get(target)
+            if path:
+                result = await self._open_file(str(path))
+                return result
+            return await self._open_app(target)
 
         if m := _match(command, r"(?i)^(?:open|show)\s+(?:file\s+)?(.+\.[\w]{1,8})$"):
             return await self._open_file(m.group(1).strip())
@@ -232,7 +281,8 @@ class PCControl:
         result = await open_application(app)
         if result["success"]:
             return f"Opening {app}."
-        return f"I couldn't find '{app}'. Make sure it's installed."
+        reason = result.get("stderr") or "Make sure it's installed and available in PATH."
+        return f"I couldn't open '{app}'. {reason}"
 
     async def _kill_process(self, name: str) -> str:
         result = await kill_process(name)

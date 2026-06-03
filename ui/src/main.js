@@ -1,4 +1,14 @@
-/**
+import React from 'react';
+  
+  const Main = () =>  {
+	return (
+	  <div>
+	  </div>
+	);
+  }
+  
+  export default Main;
+  /**
  * JARVIS Electron Main Process — ui/src/main.js
  * Manages the app window, bridges to Python backend via IPC,
  * handles system tray, global shortcuts, and auto-launch.

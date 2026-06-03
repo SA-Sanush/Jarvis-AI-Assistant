@@ -15,6 +15,42 @@ import sys
 import os
 import argparse
 import logging
+import ctypes
+import ctypes.util
+
+if sys.platform.startswith("linux"):
+    local_lib = os.path.expanduser("~/.local/lib")
+    if os.path.isdir(local_lib):
+        os.environ["LD_LIBRARY_PATH"] = ":".join(
+            filter(None, [local_lib, os.environ.get("LD_LIBRARY_PATH", "")])
+        )
+
+        original_find_library = ctypes.util.find_library
+
+        def find_library(name):
+            if name == "portaudio":
+                for lib_name in ("libportaudio.so", "libportaudio.so.2", "libportaudio.so.2.0.0"):
+                    lib_path = os.path.join(local_lib, lib_name)
+                    if os.path.exists(lib_path):
+                        return lib_path
+            return original_find_library(name)
+
+        ctypes.util.find_library = find_library
+
+        preload_paths = []
+        for lib_name in ("libportaudio.so.2", "libportaudio.so", "libportaudio.so.2.0.0"):
+            lib_path = os.path.join(local_lib, lib_name)
+            if os.path.exists(lib_path):
+                preload_paths.append(lib_path)
+                try:
+                    ctypes.CDLL(lib_path, mode=ctypes.RTLD_GLOBAL)
+                    break
+                except OSError:
+                    pass
+        if preload_paths:
+            os.environ["LD_PRELOAD"] = ":".join(
+                filter(None, [preload_paths[0], os.environ.get("LD_PRELOAD", "")])
+            )
 
 try:
     from dotenv import load_dotenv

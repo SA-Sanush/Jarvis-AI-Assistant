@@ -1,4 +1,14 @@
-/**
+import React from 'react';
+  
+  const Preload = () =>  {
+	return (
+	  <div>
+	  </div>
+	);
+  }
+  
+  export default Preload;
+  /**
  * JARVIS Preload — ui/src/preload.js
  * Secure contextBridge between renderer and main process.
  * Renderer can ONLY call these explicitly exposed APIs.

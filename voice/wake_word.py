@@ -13,12 +13,23 @@ import logging
 import asyncio
 import platform
 import threading
+import ctypes
 from typing import Callable, Optional
 
 import numpy as np
 
 logger = logging.getLogger("jarvis.wake_word")
 OS = platform.system()
+
+
+def _normalize_wake_words(wake_word):
+    if wake_word is None:
+        return ["jarvis"]
+    if isinstance(wake_word, str):
+        return [wake_word.strip().lower()]
+    if isinstance(wake_word, (list, tuple)):
+        return [str(w).strip().lower() for w in wake_word if str(w).strip()]
+    return [str(wake_word).strip().lower()]
 
 
 # ─────────────────────────────────────────────
@@ -32,9 +43,9 @@ class PorcupineWakeWord:
     """
     name = "porcupine"
 
-    def __init__(self, access_key: str, keyword: str = "jarvis", sensitivity: float = 0.6):
+    def __init__(self, access_key: str, keywords="jarvis", sensitivity: float = 0.6):
         self.access_key = access_key
-        self.keyword = keyword.lower()
+        self.keywords = _normalize_wake_words(keywords)
         self.sensitivity = sensitivity
         self._porcupine = None
         self._available = False
@@ -46,11 +57,11 @@ class PorcupineWakeWord:
             # Built-in keywords: alexa, computer, hey google, hey siri, jarvis, ok google, picovoice, porcupine, terminator, americano, blueberry, bumblebee, grapefruit, grasshopper, hey barista, hey mycroft, pineapple, smart mirror, snowboy
             self._porcupine = pvporcupine.create(
                 access_key=self.access_key,
-                keywords=[self.keyword],
-                sensitivities=[self.sensitivity]
+                keywords=self.keywords,
+                sensitivities=[self.sensitivity] * len(self.keywords)
             )
             self._available = True
-            logger.info(f"Porcupine ready — listening for '{self.keyword}'")
+            logger.info(f"Porcupine ready — listening for {self.keywords}")
         except ImportError:
             logger.debug("pvporcupine not installed")
         except Exception as e:
@@ -91,8 +102,8 @@ class VoskWakeWord:
     """
     name = "vosk"
 
-    def __init__(self, model_path: str = None, keyword: str = "jarvis"):
-        self.keyword = keyword.lower()
+    def __init__(self, model_path: str = None, keywords="jarvis"):
+        self.keywords = _normalize_wake_words(keywords)
         self.model_path = model_path or os.path.expanduser("~/.jarvis/vosk-model-small-en-us")
         self._rec = None
         self._available = False
@@ -109,10 +120,11 @@ class VoskWakeWord:
                                "Download from https://alphacephei.com/vosk/models")
                 return
             model = Model(self.model_path)
-            self._rec = KaldiRecognizer(model, self.sample_rate)
+            grammar = _json.dumps(self.keywords)
+            self._rec = KaldiRecognizer(model, self.sample_rate, grammar)
             self._json = _json
             self._available = True
-            logger.info(f"Vosk ready — listening for '{self.keyword}'")
+            logger.info(f"Vosk ready — listening for {self.keywords} with grammar")
         except ImportError:
             logger.debug("vosk not installed")
         except Exception as e:
@@ -129,9 +141,17 @@ class VoskWakeWord:
         if self._rec.AcceptWaveform(raw):
             result = self._json.loads(self._rec.Result())
             text = result.get("text", "").lower()
-            if self.keyword in text:
+            if any(keyword in text for keyword in self.keywords):
                 logger.debug(f"Vosk recognized: '{text}'")
                 return True
+            logger.debug(f"Vosk accepted but did not match wake word: '{text}'")
+        else:
+            partial = self._json.loads(self._rec.PartialResult()).get("partial", "").lower()
+            if partial:
+                logger.debug(f"Vosk partial: '{partial}'")
+                if any(keyword in partial for keyword in self.keywords):
+                    logger.debug(f"Vosk partial matched wake word: '{partial}'")
+                    return True
         return False
 
     def delete(self):
@@ -149,30 +169,51 @@ class SimpleWakeWord:
     """
     name = "simple"
 
-    def __init__(self, keyword: str = "jarvis"):
-        self.keyword = keyword.lower()
+    def __init__(self, keywords="jarvis"):
+        self.keywords = _normalize_wake_words(keywords)
         self.sample_rate = 16000
         self.frame_length = 8000
         self._available = True  # Always available
+        self._buffer = bytearray()
+        self._min_buffer_seconds = 1.2
+        self._max_buffer_seconds = 4.0
 
     @property
     def available(self) -> bool:
         return True
 
+    def _trim_buffer(self):
+        max_bytes = int(self.sample_rate * 2 * self._max_buffer_seconds)
+        if len(self._buffer) > max_bytes:
+            self._buffer = self._buffer[-max_bytes:]
+
     def process_audio_chunk(self, audio_data: bytes) -> bool:
-        """Try speech recognition on audio chunk."""
+        """Try speech recognition on a buffered audio segment."""
+        self._buffer.extend(audio_data)
+        self._trim_buffer()
+
+        min_bytes = int(self.sample_rate * 2 * self._min_buffer_seconds)
+        if len(self._buffer) < min_bytes:
+            return False
+
         try:
             import speech_recognition as sr
             recognizer = sr.Recognizer()
-            audio = sr.AudioData(audio_data, self.sample_rate, 2)
+            audio = sr.AudioData(bytes(self._buffer), self.sample_rate, 2)
             text = recognizer.recognize_google(audio).lower()
             logger.debug(f"Heard: '{text}'")
-            return self.keyword in text
-        except Exception:
+            if any(keyword in text for keyword in self.keywords):
+                self._buffer.clear()
+                return True
+            self._buffer = self._buffer[-min_bytes:]
+            return False
+        except Exception as e:
+            logger.debug(f"Simple wake word recognition failed: {e}")
+            self._buffer = self._buffer[-min_bytes:]
             return False
 
     def delete(self):
-        pass
+        self._buffer.clear()
 
 
 # ─────────────────────────────────────────────
@@ -188,7 +229,8 @@ class WakeWordDetector:
 
     def __init__(self, config: dict = None, on_detected: Callable = None):
         cfg = config or {}
-        self.keyword = cfg.get("wake_word", "jarvis")
+        self.keywords = _normalize_wake_words(cfg.get("wake_word", "jarvis"))
+        self.keyword = self.keywords[0] if self.keywords else "jarvis"
         self.porcupine_key = cfg.get("porcupine_access_key") or os.getenv("PORCUPINE_ACCESS_KEY", "")
         self.vosk_model = cfg.get("vosk_model_path")
         self.on_detected = on_detected or (lambda: None)
@@ -203,19 +245,19 @@ class WakeWordDetector:
     def _pick_backend(self):
         # 1. Porcupine
         if self.porcupine_key:
-            p = PorcupineWakeWord(self.porcupine_key, self.keyword)
+            p = PorcupineWakeWord(self.porcupine_key, self.keywords)
             if p.available:
                 return p
 
         # 2. Vosk
-        v = VoskWakeWord(self.vosk_model, self.keyword)
+        v = VoskWakeWord(self.vosk_model, self.keywords)
         if v.available:
             return v
 
         # 3. Simple
         logger.warning("Using simple wake word backend (less accurate). "
                        "Set PORCUPINE_ACCESS_KEY for best results.")
-        return SimpleWakeWord(self.keyword)
+        return SimpleWakeWord(self.keywords)
 
     def start(self, loop: asyncio.AbstractEventLoop = None):
         """Start listening in background thread."""
@@ -223,7 +265,7 @@ class WakeWordDetector:
         self._running = True
         self._thread = threading.Thread(target=self._listen_loop, daemon=True)
         self._thread.start()
-        logger.info(f"🎤 Wake word detector started — say '{self.keyword}'")
+        logger.info(f"🎤 Wake word detector started — say '{', '.join(self.keywords)}'")
 
     def stop(self):
         self._running = False
@@ -233,10 +275,46 @@ class WakeWordDetector:
         logger.info("Wake word detector stopped.")
 
     def _listen_loop(self):
+        if OS == "Linux":
+            local_lib = os.path.expanduser("~/.local/lib")
+            if os.path.isdir(local_lib):
+                original_find_library = ctypes.util.find_library
+
+                def find_library(name):
+                    if name == "portaudio":
+                        for lib_name in ("libportaudio.so", "libportaudio.so.2", "libportaudio.so.2.0.0"):
+                            lib_path = os.path.join(local_lib, lib_name)
+                            if os.path.exists(lib_path):
+                                return lib_path
+                    return original_find_library(name)
+
+                ctypes.util.find_library = find_library
+
+                preload_paths = []
+                for lib_name in ("libportaudio.so.2", "libportaudio.so", "libportaudio.so.2.0.0"):
+                    lib_path = os.path.join(local_lib, lib_name)
+                    if os.path.exists(lib_path):
+                        preload_paths.append(lib_path)
+                        try:
+                            ctypes.CDLL(lib_path, mode=ctypes.RTLD_GLOBAL)
+                            break
+                        except OSError:
+                            pass
+                if preload_paths:
+                    os.environ["LD_PRELOAD"] = ":".join(
+                        filter(None, [preload_paths[0], os.environ.get("LD_PRELOAD", "")])
+                    )
+
         try:
             import sounddevice as sd
         except ImportError:
             logger.error("sounddevice not installed: pip install sounddevice")
+            return
+        except OSError as e:
+            logger.error(
+                f"sounddevice / PortAudio error: {e}. "
+                "Install system PortAudio libraries or build PortAudio locally."
+            )
             return
 
         sample_rate = getattr(self._backend, "sample_rate", 16000)
